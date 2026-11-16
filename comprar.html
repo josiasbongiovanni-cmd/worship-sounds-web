@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comprar · Worship Sounds</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <script src="licencias.js"></script>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><span class="mark">W</span>Worship<b>Sounds</b></a>
+    <nav class="main"><a href="index.html#plugins">Plugins</a><a href="index.html#precios">Precios</a><a href="mi-licencia.html">Mi licencia</a></nav>
+  </div>
+</header>
+<section class="shop">
+  <div class="wrap">
+    <div class="eyebrow">Comprar</div>
+    <h1>Elegí qué querés</h1>
+    <p class="lead">Todos los programas se prueban gratis durante <b>3 meses</b>, completos. Después, elegí: el plan mensual con todo, o comprar para siempre lo que uses. El pago es con <b>Mercado Pago</b> (tarjeta, débito o dinero en cuenta), en pesos al dólar oficial del día.</p>
+    <div class="plans" id="plans"></div>
+    <div class="form">
+      <div id="chosen" style="font-weight:700;margin-bottom:12px"></div>
+      <label for="email">Tu email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="tu@email.com">
+      <a class="btn btn-gold" id="pay" href="#">Pagar con Mercado Pago</a>
+      <div class="msg" id="msg"></div>
+      <p class="note" id="note"></p>
+    </div>
+  </div>
+</section>
+<script>
+let chosen = new URLSearchParams(location.search).get("p") || "all";
+if (!WS_PRODUCTS.some((p) => p.id === chosen)) chosen = "all";
+let ars = {};
+function render() {
+  const el = document.getElementById("plans");
+  el.innerHTML = WS_PRODUCTS.map((p) => `
+    <button class="plan ${p.id === "all" ? "big" : ""} ${p.id === chosen ? "sel" : ""}" data-id="${p.id}">
+      <h3>${wsEsc(p.name)}</h3><p>${wsEsc(p.desc)}</p>
+      <div class="amt">USD ${p.usd}${p.kind === "subscription" ? " / mes" : ""}<small>${ars[p.id] ? "≈ " + wsPesos(ars[p.id]) + (p.kind === "subscription" ? " por mes" : "") : (p.kind === "subscription" ? "" : "para siempre")}</small></div>
+    </button>`).join("");
+  el.querySelectorAll(".plan").forEach((b) => b.onclick = () => { chosen = b.dataset.id; history.replaceState(null, "", "?p=" + chosen); render(); });
+  const p = WS_PRODUCTS.find((x) => x.id === chosen);
+  document.getElementById("chosen").textContent = p.kind === "subscription"
+    ? `Plan mensual · USD ${p.usd} por mes${ars[p.id] ? " (" + wsPesos(ars[p.id]) + ")" : ""}`
+    : `${p.name} · USD ${p.usd} para siempre${ars[p.id] ? " (" + wsPesos(ars[p.id]) + ")" : ""}`;
+  document.getElementById("note").innerHTML = p.kind === "subscription"
+    ? "Usá el <b>mismo email de tu cuenta de Mercado Pago</b> (si no coincide, Mercado Pago rechaza la suscripción). Se cobra cada mes; el monto en pesos se ajusta al dólar oficial. La cancelás cuando quieras desde Mercado Pago y sigue andando hasta el final del mes pagado."
+    : "Pago único. Después del pago te mostramos tu clave de licencia: la pegás en el programa (botón de la licencia, abajo a la izquierda). Sirve en 2 computadoras.";
+}
+render();
+wsCall("license", { action: "prices" }).then((r) => {
+  if (r.ok) { for (const p of r.products) if (p.ars) ars[p.id] = p.ars; render(); }
+});
+document.getElementById("pay").onclick = async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("msg");
+  const email = document.getElementById("email").value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.className = "msg err"; msg.textContent = "Escribí un email válido."; return; }
+  msg.className = "msg"; msg.textContent = "Preparando el pago…";
+  const r = await wsCall("checkout", { product: chosen, email });
+  if (r.ok && r.url) { msg.textContent = "Te llevamos a Mercado Pago…"; location.href = r.url; }
+  else { msg.className = "msg err"; msg.textContent = r.message || "No se pudo preparar el pago. Probá de nuevo."; }
+};
+</script>
+<footer>
+  <div class="wrap">
+    <div>© 2026 Worship Sounds · Josias Bongiovanni</div>
+    <nav><a href="creditos.html">Créditos y licencias</a><a href="terminos.html">Términos y licencia de uso</a><a href="privacidad.html">Privacidad</a><a href="mailto:josiasbongiovanni@gmail.com">Soporte</a></nav>
+  </div>
+</footer>
+</body>
+</html>

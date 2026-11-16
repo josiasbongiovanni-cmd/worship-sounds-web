@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gracias · Worship Sounds</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <script src="licencias.js"></script>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><span class="mark">W</span>Worship<b>Sounds</b></a>
+    <nav class="main"><a href="index.html#plugins">Plugins</a><a href="index.html#precios">Precios</a><a href="mi-licencia.html">Mi licencia</a></nav>
+  </div>
+</header>
+<section class="shop">
+  <div class="wrap">
+    <div class="eyebrow">Compra</div>
+    <h1 id="title">Estamos confirmando tu pago…</h1>
+    <p class="lead" id="lead">Mercado Pago tarda unos segundos en avisarnos. No cierres esta página.</p>
+    <div id="box" class="form" style="display:none">
+      <div>Tu clave de licencia:</div>
+      <div class="keybox" id="key"></div>
+      <a class="btn btn-gold btn-small" href="#" id="copy">Copiar la clave</a>
+      <ol class="steps">
+        <li>Abrí el programa (o el plugin dentro de tu DAW).</li>
+        <li>Tocá la etiqueta de la licencia, abajo a la izquierda (<b>PRUEBA</b> o <b>ACTIVAR LICENCIA</b>).</li>
+        <li>Pegá la clave y tocá <b>ACTIVAR</b>. Necesita internet solo para activarse.</li>
+      </ol>
+      <p class="note">Guardá esta clave: es tu licencia. Sirve en 2 computadoras; podés liberar una desde <a href="mi-licencia.html" style="text-decoration:underline">Mi licencia</a>. Te la mostramos también a <span id="email"></span> si nos escribís.</p>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+</section>
+<script>
+const q = new URLSearchParams(location.search);
+const order = q.get("order") || q.get("external_reference");
+let tries = 0;
+async function poll() {
+  const r = await wsCall("license", { action: "order", order, payment_id: q.get("payment_id") || q.get("collection_id"), preapproval_id: q.get("preapproval_id") });
+  const msg = document.getElementById("msg");
+  if (r.ok && r.license) {
+    document.getElementById("title").textContent = "¡Gracias! Ya tenés tu licencia";
+    document.getElementById("lead").textContent = r.name ? `${r.name}` : "";
+    document.getElementById("key").textContent = r.license;
+    document.getElementById("email").textContent = r.email || "tu email";
+    document.getElementById("box").style.display = "";
+    msg.textContent = "";
+    return;
+  }
+  if (r.ok && r.status === "failed") {
+    document.getElementById("title").textContent = "El pago no se completó";
+    document.getElementById("lead").innerHTML = 'Mercado Pago rechazó o canceló el pago. Podés <a href="comprar.html" style="text-decoration:underline">intentarlo de nuevo</a>.';
+    return;
+  }
+  if (!r.ok && r.code === "order") { document.getElementById("title").textContent = "No encontramos ese pedido"; document.getElementById("lead").textContent = r.message || ""; return; }
+  if (++tries < 60) { setTimeout(poll, 4000); msg.textContent = tries > 5 ? "Todavía esperando la confirmación de Mercado Pago…" : ""; }
+  else { msg.className = "msg err"; msg.innerHTML = 'El pago todavía figura pendiente (por ejemplo, un pago en efectivo tarda más). Volvé a abrir esta página más tarde, o escribinos a <a href="mailto:josiasbongiovanni@gmail.com" style="text-decoration:underline">soporte</a> con este número de pedido: ' + wsEsc(order); }
+}
+if (!order) { document.getElementById("title").textContent = "Falta el número de pedido"; document.getElementById("lead").textContent = ""; } else poll();
+document.getElementById("copy").onclick = (e) => { e.preventDefault(); navigator.clipboard.writeText(document.getElementById("key").textContent); e.target.textContent = "¡Copiada!"; };
+</script>
+<footer>
+  <div class="wrap">
+    <div>© 2026 Worship Sounds · Josias Bongiovanni</div>
+    <nav><a href="creditos.html">Créditos y licencias</a><a href="terminos.html">Términos y licencia de uso</a><a href="privacidad.html">Privacidad</a><a href="mailto:josiasbongiovanni@gmail.com">Soporte</a></nav>
+  </div>
+</footer>
+</body>
+</html>

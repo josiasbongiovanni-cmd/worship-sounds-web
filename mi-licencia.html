@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi licencia · Worship Sounds</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="style.css">
+  <script src="licencias.js"></script>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><span class="mark">W</span>Worship<b>Sounds</b></a>
+    <nav class="main"><a href="index.html#plugins">Plugins</a><a href="index.html#precios">Precios</a><a href="mi-licencia.html">Mi licencia</a></nav>
+  </div>
+</header>
+<section class="shop">
+  <div class="wrap">
+    <div class="eyebrow">Mi licencia</div>
+    <h1>Tu licencia y tus computadoras</h1>
+    <p class="lead">Escribí tu clave para ver en qué computadoras está activada. Si cambiaste de computadora o se te rompió, liberá la vieja para activar la nueva.</p>
+    <div class="form">
+      <label for="key">Clave de licencia</label>
+      <input id="key" placeholder="WS-XXXX-XXXX-XXXX-XXXX" autocomplete="off" style="font-family:ui-monospace,Menlo,monospace">
+      <a class="btn btn-gold" id="look" href="#">Ver mi licencia</a>
+      <div class="msg" id="msg"></div>
+      <div id="out"></div>
+    </div>
+  </div>
+</section>
+<script>
+const kinds = { perpetual: "Para siempre", subscription: "Plan mensual" };
+function show(r, key) {
+  const out = document.getElementById("out");
+  if (!r.ok) { out.innerHTML = ""; const m = document.getElementById("msg"); m.className = "msg err"; m.textContent = r.message || "No se pudo consultar."; return; }
+  document.getElementById("msg").textContent = "";
+  let h = `<p style="margin-top:16px"><b>${wsEsc(r.name || r.product)}</b> · ${kinds[r.kind] || ""}`;
+  if (r.kind === "subscription" && r.paid_until) h += ` · pagado hasta el ${wsDate(r.paid_until)}${r.status === "cancelled" ? " (cancelado)" : ""}`;
+  h += `</p>`;
+  if (r.problem) h += `<p class="msg err">${wsEsc(r.problem)}</p>`;
+  h += `<p class="note">Activada en ${r.machines.length} de ${r.max_machines} computadoras.</p><div class="machines">`;
+  h += r.machines.map((m) => `<div class="machine"><div>${wsEsc(m.label || "Computadora")}<small>${wsEsc(m.product)} · último uso ${wsDate(m.last_seen)}</small></div><a class="btn btn-ghost btn-small" href="#" data-m="${wsEsc(m.machine)}">Liberar</a></div>`).join("");
+  h += `</div>`;
+  out.innerHTML = h;
+  out.querySelectorAll("[data-m]").forEach((b) => b.onclick = async (e) => {
+    e.preventDefault();
+    if (!confirm("¿Liberar esta computadora? Si la volvés a usar, el programa te va a pedir activar la licencia de nuevo.")) return;
+    show(await wsCall("license", { action: "release", key, machine: b.dataset.m }), key);
+  });
+}
+document.getElementById("look").onclick = async (e) => {
+  e.preventDefault();
+  const key = document.getElementById("key").value.trim();
+  document.getElementById("msg").className = "msg"; document.getElementById("msg").textContent = "Buscando…";
+  show(await wsCall("license", { action: "status", key }), key);
+};
+</script>
+<footer>
+  <div class="wrap">
+    <div>© 2026 Worship Sounds · Josias Bongiovanni</div>
+    <nav><a href="creditos.html">Créditos y licencias</a><a href="terminos.html">Términos y licencia de uso</a><a href="privacidad.html">Privacidad</a><a href="mailto:josiasbongiovanni@gmail.com">Soporte</a></nav>
+  </div>
+</footer>
+</body>
+</html>
