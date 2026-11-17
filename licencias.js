@@ -18,7 +18,8 @@ const WS_PRODUCTS = [
 
 async function wsCall(fn, body) {
   try {
-    const r = await fetch(`${WS_SERVER}/ws-${fn}`,          // funciones ws-* (viven en el proyecto de Activa) { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    // Funciones ws-* (viven en el proyecto de Activa)
+    const r = await fetch(`${WS_SERVER}/ws-${fn}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
     return j;
   } catch (e) {
